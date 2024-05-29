@@ -1,0 +1,123 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+    defaultConfig {
+        applicationId "com.yoyo.demo"
+        minSdkVersion 21
+        targetSdkVersion 30
+        versionCode 1000000
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            // 设置支持的SO库构架，注意这里要根据你的实际情况来设置
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
+        multiDexEnabled true
+
+        flavorDimensions "default"
+    }
+
+    //签名文件
+    signingConfigs {
+
+        debug {
+            v1SigningEnabled true
+            v2SigningEnabled true
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+            storeFile file("./keystore/debug.keystore")
+            storePassword "android"
+        }
+    }
+    buildFeatures {
+        //这2个为非必选，想用哪个就保留那个 用的话一定要加上项目中的 ViewBinding & DataBinding 混淆规则
+        dataBinding = true
+        viewBinding = true
+    }
+
+    //使用Kotlin实验特性
+    androidExtensions {
+        experimental = true
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+            zipAlignEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig = signingConfigs.debug
+        }
+
+        release {
+            minifyEnabled true//开启混淆
+            shrinkResources true
+            zipAlignEnabled true//去除无用资源
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig = signingConfigs.debug
+        }
+    }
+    android.applicationVariants.all { variant ->
+        variant.outputs.all {
+            def createTime = new Date().format("YYYY-MM-dd", TimeZone.getTimeZone("GMT+08:00")) + "_" + new Date().getHours() + "-" + new Date().getMinutes()
+            outputFileName = variant.versionName + "_" + createTime + "_" + variant.buildType.name + "_" + variant.applicationId + ".apk"
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+    lintOptions {
+        disable 'InvalidPackage'
+        disable "ResourceType"
+        abortOnError false
+    }
+    dexOptions {
+        javaMaxHeapSize "4g"
+        jumboMode = true
+        preDexLibraries = false
+        additionalParameters = [
+                '--multi-dex',//多分包
+                '--set-max-idx-number=60000'//每个包内方法数上限
+        ]
+    }
+
+
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.aar'])
+    //androidx UI
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.4.0'
+
+    // 工具类
+    implementation 'com.blankj:utilcodex:1.31.0'
+
+    // 权限
+    implementation 'com.github.getActivity:XXPermissions:18.5'
+
+
+    // 图片加载
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
+    annotationProcessor 'com.github.bumptech.glide:okhttp3-integration:4.11.0'
+
+    // pag动效
+    implementation 'com.tencent.tav:libpag:4.3.51'
+
+    // 自定义view
+    // ShapeView：https://github.com/getActivity/ShapeView
+    implementation 'com.github.getActivity:ShapeView:9.0'
+    // ShapeDrawable：https://github.com/getActivity/ShapeDrawable
+    implementation 'com.github.getActivity:ShapeDrawable:3.0'
+}
