@@ -1,4 +1,4 @@
-package com.yoyo.demo.ui.activity.clean
+package com.yoyo.demo.ui.activity.clean.entity
 
 data class FileInfo(val name: String, val path: String,
                     val size: Long, val type: Int,

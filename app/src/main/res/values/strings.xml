@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Demo</string>
+    <string name="duplicate_file">重复文件</string>
+    <string name="scan">扫描</string>
+    <string name="duplicate_file_desc">组重复文件</string>
+    <string name="duplicate_file_take_space">重复文件会占用手机存储空间</string>
+    <string name="take_space">占用存储空间</string>
+    <string name="clean_duplicate_files">重复文件可放心清理，清理后不影响使用</string>
+    <string name="scanning">正在扫描中...</string>
+    <string name="total_header_duplicate_files">共三个视频</string>
+    <string name="total_header_files_size">已选择1000MB</string>
 </resources>
