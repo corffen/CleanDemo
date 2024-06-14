@@ -1,6 +1,7 @@
 package com.yoyo.demo.ui.activity.clean
 
 import android.text.TextUtils
+import com.yoyo.demo.R
 import java.io.File
 
 /**
@@ -64,24 +65,24 @@ object FileTypeUtils {
         musics.add("wv")
         apks.add("apk")
     }
-//    fun getFileTypeImage(fileType: Int): Int {
-//        return when(fileType) {
-//            TYPE_IMAGE ->
-//                R.drawable.ic_duplicate_files_image
-//            TYPE_VIDEO ->
-//                R.drawable.ic_duplicate_files_video
-//            TYPE_MUSIC ->
-//                R.drawable.ic_duplicate_files_music
-//            TYPE_DOC ->
-//                R.drawable.ic_duplicate_files_doc
-//            TYPE_ZIP ->
-//                R.drawable.ic_duplicate_files_zip
-//            TYPE_APK ->
-//                R.drawable.ic_duplicate_files_apk
-//            else ->
-//                R.drawable.ic_duplicate_files_other
-//        }
-//    }
+    fun getFileTypeImage(fileType: Int): Int {
+        return when(fileType) {
+            TYPE_IMAGE ->
+                R.drawable.ic_duplicate_files_image
+            TYPE_VIDEO ->
+                R.drawable.ic_duplicate_files_video
+            TYPE_MUSIC ->
+                R.drawable.ic_duplicate_files_music
+            TYPE_DOC ->
+                R.drawable.ic_duplicate_files_doc
+            TYPE_ZIP ->
+                R.drawable.ic_duplicate_files_zip
+            TYPE_APK ->
+                R.drawable.ic_duplicate_files_apk
+            else ->
+                R.drawable.ic_duplicate_files_other
+        }
+    }
 
     /**
      * 获取文件类型
