@@ -1,9 +1,17 @@
 package com.yoyo.demo.ui.activity.clean
 
+import android.app.Application
+import android.content.ContentResolver
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
+import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.FileUtils
 import com.blankj.utilcode.util.SDCardUtils
 import com.blankj.utilcode.util.TimeUtils
+import com.blankj.utilcode.util.Utils
 import com.yoyo.demo.ui.activity.clean.entity.FileInfo
 import com.yoyo.demo.ui.activity.clean.listener.ScanEventListener
 import kotlinx.coroutines.Dispatchers
@@ -14,25 +22,69 @@ import java.util.Date
 object CleanUtils {
     private const val TAG = "CleanUtils"
     private const val MIN_FILE_SIZE = 500 * 1024L
-    suspend fun scanFiles(listener: ScanEventListener? = null): Map<String, List<FileInfo>> {
+    suspend fun scanFiles(
+        rootUri: Uri?,
+        listener: ScanEventListener? = null
+    ): Map<String, List<FileInfo>> {
         return withContext(Dispatchers.Default) {
             MeasureUtils.measureTime("scan files") {
                 listener?.onStart()
-                val directory = File(SDCardUtils.getSDCardPathByEnvironment(), "Android/data")
-                val filesMap = mutableMapOf<String, MutableList<File>>()
+
+                val files = mutableListOf<File>()
+                if (rootUri != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val resolver: ContentResolver = Utils.getApp().contentResolver
+                    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                        rootUri,
+                        DocumentsContract.getTreeDocumentId(rootUri)
+                    )
+                    val cursor = resolver.query(
+                        childrenUri,
+                        arrayOf(
+                            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                            DocumentsContract.Document.COLUMN_SIZE
+                        ),
+                        null,
+                        null,
+                        null
+                    )
+                    cursor?.use {
+                        while (it.moveToNext()) {
+                            val documentId = it.getString(0)
+                            val documentUri =
+                                DocumentsContract.buildDocumentUriUsingTree(rootUri, documentId)
+                            val size = it.getLong(1)
+                            val file = documentUri.path?.let { file -> File(file) }
+                            Log.d(
+                                TAG,
+                                "scanFiles: fileName=${file?.name},size = $size,fileSize=${file?.length()}"
+                            )
+                            file?.let { file1 ->
+                                if (size > MIN_FILE_SIZE) {
+                                    files.add(file1)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    val directory = File(SDCardUtils.getSDCardPathByEnvironment(), "Android/data")
+                    files.addAll(
+                        directory.walkTopDown().filter { it.isFile && it.length() > MIN_FILE_SIZE }
+                            .toList()
+                    )
+                }
                 val sizeMap = mutableMapOf<Long, MutableList<File>>()
+
+                files.forEachIndexed { _, file ->
+                    val fileLen = file.length()
+                    if (!sizeMap.containsKey(fileLen)) {
+                        sizeMap[fileLen] = mutableListOf()
+                    }
+                    sizeMap[fileLen]!!.add(file)
+                    listener?.onScanFileName(file.name)
+                }
+                val filesMap = mutableMapOf<String, MutableList<File>>()
                 val duplicateSet = HashSet<String>() //统计重复的组数
                 var progress = 0
-                //遍历所有的文件，筛选出大于500KB的文件,并按照文件大小进行分组
-                directory.walkTopDown().forEach { file ->
-                    if (file.isFile && file.length() > MIN_FILE_SIZE) {
-                        val fileLen = file.length()
-                        if (!sizeMap.containsKey(fileLen)) {
-                            sizeMap[fileLen] = mutableListOf()
-                        }
-                        sizeMap[fileLen]!!.add(file)
-                    }
-                }
                 val total = sizeMap.size
                 //当文件大小相同时,再去获取md5值,并按照md5进行分组
                 sizeMap.forEach { (_, files) ->
@@ -90,14 +142,14 @@ object CleanUtils {
         val timeStamp = file.lastModified()
         val modifyTime = TimeUtils.date2String(Date(timeStamp))
         val fileInfo = FileInfo(
-                name = name,
-                path = path,
-                size = size,
-                type = type,
-                typeName = typeName,
-                icon = FileTypeUtils.getFileTypeImage(type),
-                modifyTime = modifyTime,
-                md5 = md5
+            name = name,
+            path = path,
+            size = size,
+            type = type,
+            typeName = typeName,
+            icon = FileTypeUtils.getFileTypeImage(type),
+            modifyTime = modifyTime,
+            md5 = md5
         )
         return fileInfo
     }

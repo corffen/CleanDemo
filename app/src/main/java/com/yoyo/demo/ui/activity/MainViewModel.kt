@@ -1,5 +1,6 @@
 package com.yoyo.demo.ui.activity
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -37,16 +38,18 @@ class MainViewModel : ViewModel() {
 
     private val selectedFiles = mutableSetOf<FileInfo>()
 
+    private val selectMap = hashMapOf<String, Int>()
+
     private val _totalSelectedSize = MutableLiveData<Long>()
     val totalSelectedSize: LiveData<Long> get() = _totalSelectedSize
 
     private val _duplicateFiles = MutableLiveData<List<FileItem>>()
     val duplicateFiles: LiveData<List<FileItem>> get() = _duplicateFiles
 
-    fun startScan() {
+    fun startScan(rootUri: Uri?) {
         viewModelScope.launch {
             _uiState.postValue(UiState.Loading)
-            val fileInfoMap = CleanUtils.scanFiles(object : ScanEventAdapter() {
+            val fileInfoMap = CleanUtils.scanFiles(rootUri, object : ScanEventAdapter() {
                 override fun onScanFileName(fileName: String) {
                     _scanningFileName.postValue(fileName)
                 }
@@ -57,6 +60,10 @@ class MainViewModel : ViewModel() {
 
                 override fun onDuplicateCount(count: Int) {
                     _duplicateFileGroupCount.postValue(count)
+                }
+
+                override fun onStart() {
+                    Log.d(TAG, "onStart: ")
                 }
 
             })
@@ -79,11 +86,15 @@ class MainViewModel : ViewModel() {
 
     fun isScanning() = uiState.value == UiState.Loading
 
-    fun onFileSelectionChanged(fileItem: FileItem.FileEntry, isSelected: Boolean) {
+    fun onFileSelectionChanged(position: Int, fileItem: FileItem.FileEntry, isSelected: Boolean) {
+        val key = fileItem.fileInfo.md5
+        val count = selectMap.getOrElse(key) { 0 }
         if (isSelected) {
             selectedFiles.add(fileItem.fileInfo)
+            selectMap[key] = count + 1
         } else {
             selectedFiles.remove(fileItem.fileInfo)
+            selectMap[key] = count - 1
         }
         val headerIndex = _duplicateFiles.value?.indexOfFirst {
             it is FileItem.Header &&
@@ -97,7 +108,14 @@ class MainViewModel : ViewModel() {
             } else {
                 header.size - fileItem.fileInfo.size
             }
-            _duplicateFiles.postValue(_duplicateFiles.value)
+            header.selectedCount = selectMap.getOrElse(key) { 0 }
+            val newList = _duplicateFiles.value?.toMutableList()?.apply {
+                set(headerIndex, header)
+            }
+            newList?.let {
+                it[position] = fileItem.copy(selected = isSelected)
+                _duplicateFiles.postValue(it)
+            }
         }
 
         _totalSelectedSize.value = selectedFiles.sumOf { it.size }

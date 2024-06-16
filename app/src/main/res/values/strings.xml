@@ -9,4 +9,6 @@
     <string name="scanning">正在扫描中…</string>
     <string name="total_header_duplicate_files">共三个视频</string>
     <string name="total_header_files_size">已选择1000MB</string>
+    <string name="empty_duplicate_file_tips">未发现任何重复文件</string>
+    <string name="known">知道了</string>
 </resources>

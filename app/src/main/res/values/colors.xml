@@ -18,4 +18,5 @@
     <color name="secondColorGray8">#888888</color>
     <color name="secondColorGrayE">#EEEEEE</color>
     <color name="secondColorGrayB">#BBBBBB</color>
+    <color name="toast_bg">#99000000</color>
 </resources>

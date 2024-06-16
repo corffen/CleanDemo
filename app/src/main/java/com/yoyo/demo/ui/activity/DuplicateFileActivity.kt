@@ -2,17 +2,29 @@ package com.yoyo.demo.ui.activity
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.util.Log
+import android.view.Gravity
+import android.widget.Button
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.blankj.utilcode.util.BarUtils
+import com.blankj.utilcode.util.ColorUtils
 import com.blankj.utilcode.util.ToastUtils
+import com.yoyo.demo.R
 import com.yoyo.demo.databinding.ActivityDuplicateFileBinding
 import com.yoyo.demo.ui.activity.base.UiState
 import com.yoyo.demo.ui.activity.clean.adapter.DuplicateFileAdapter
@@ -38,6 +50,30 @@ class DuplicateFileActivity : AppCompatActivity() {
 
     private lateinit var adapter: DuplicateFileAdapter
 
+    private val requestDirectoryLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.also { uri ->
+                viewModel.startScan(uri)
+            }
+        }
+    }
+
+    private fun requestDirectoryAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                putExtra(
+                    DocumentsContract.EXTRA_INITIAL_URI,
+                    Uri.parse("content://com.android.externalstorage.documents/document/primary:Android/data")
+                )
+            }
+            requestDirectoryLauncher.launch(intent)
+        } else {
+            viewModel.startScan(null)
+        }
+    }
+
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,8 +88,11 @@ class DuplicateFileActivity : AppCompatActivity() {
             if (viewModel.isScanning()) {
                 Log.d(TAG, "onCreate: is scanning")
             } else {
-                performScan()
+                requestPermissionThenScan()
             }
+        }
+        viewBinding.ivBack.setOnClickListener {
+            onBackPressed()
         }
         viewModel.uiState.observe(this) {
             when (it) {
@@ -87,10 +126,11 @@ class DuplicateFileActivity : AppCompatActivity() {
                 viewBinding.tvResultCount.text = "${it}个"
             }
         }
-        viewModel.duplicateFiles.observe(this){
+        viewModel.duplicateFiles.observe(this) {
             adapter.submitList(it)
+            adapter.notifyDataSetChanged()
         }
-        viewModel.totalSelectedSize.observe(this){
+        viewModel.totalSelectedSize.observe(this) {
             Log.d(TAG, "onCreate: selected size =$it")
         }
     }
@@ -100,7 +140,7 @@ class DuplicateFileActivity : AppCompatActivity() {
         viewBinding.llScanResult.isVisible = true
         val fileInfoList = it.data
         if (fileInfoList.isEmpty()) {
-            viewBinding.tvEmpty.isVisible = true
+            viewBinding.llEmpty.isVisible = true
         } else {
             viewBinding.llList.isVisible = true
         }
@@ -117,30 +157,77 @@ class DuplicateFileActivity : AppCompatActivity() {
         }
     }
 
-    private fun performScan() {
+    private fun requestPermissionThenScan() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    REQUEST_CODE_READ_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                REQUEST_CODE_READ_EXTERNAL_STORAGE
+            )
         } else {
-            viewModel.startScan()
+            scan()
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_READ_EXTERNAL_STORAGE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            viewModel.startScan()
+            scan()
         }
+    }
+
+    private fun scan() {
+        requestDirectoryAccess()
     }
 
     override fun onBackPressed() {
         if (viewModel.isScanning()) {
-            ToastUtils.showLong("正在扫描ing....")
+            showStopScanDialog(this)
         } else {
             super.onBackPressed()
         }
     }
+
+
+    private fun showStopScanDialog(context: Context) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_stop_scan, null)
+        val builder = AlertDialog.Builder(context)
+        builder.setView(dialogView)
+
+        val dialog = builder.create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val btnCancel: Button = dialogView.findViewById(R.id.btn_cancel)
+        val btnContinue: Button = dialogView.findViewById(R.id.btn_continue)
+
+
+        btnCancel.setOnClickListener {
+            // 取消扫描按钮逻辑
+            dialog.dismiss()
+            super.onBackPressed()
+        }
+
+        btnContinue.setOnClickListener {
+            // 继续扫描按钮逻辑
+            dialog.dismiss()
+            showDeleteToast()
+        }
+
+        dialog.show()
+    }
+
+    private fun showDeleteToast() {
+        ToastUtils.make()
+            .setGravity(Gravity.CENTER, 0, 0)
+            .setBgColor(ColorUtils.getColor(R.color.toast_bg))
+            .setTopIcon(R.drawable.ic_success)
+            .show("删除成功")
+    }
+
 
 }

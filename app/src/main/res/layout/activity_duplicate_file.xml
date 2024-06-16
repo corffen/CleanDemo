@@ -168,29 +168,70 @@
             android:textColor="#B3FFFFFF"
             android:textSize="14sp" />
 
-        <TextView
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
-            android:background="#5EE2FAFF"
-            android:gravity="center"
-            android:paddingVertical="8dp"
-            android:text="@string/clean_duplicate_files"
-            android:textColor="#CCFFFFFF"
-            android:textSize="14sp" />
+            android:background="#5EE2FAFF">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="2dp"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:paddingVertical="8dp"
+                android:text="@string/clean_duplicate_files"
+                android:textColor="#CCFFFFFF"
+                android:textSize="14sp"
+                app:drawableStartCompat="@drawable/ic_tips" />
+        </FrameLayout>
+
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:background="@color/white"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:background="@color/white">
 
-            <TextView
-                android:id="@+id/tv_empty"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="空文件"
-                android:visibility="gone" />
+            <LinearLayout
+                android:id="@+id/ll_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="52dp"
+                    android:src="@drawable/ic_empty"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/tv_empty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:text="@string/empty_duplicate_file_tips"
+                    android:textColor="#999999"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+                <com.hjq.shape.view.ShapeTextView
+                    android:id="@+id/btn_known"
+                    android:layout_width="200dp"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="15dp"
+                    android:gravity="center"
+                    android:text="@string/known"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:shape_radius="16dp"
+                    app:shape_solidColor="#329BFF" />
+            </LinearLayout>
 
 
             <LinearLayout
@@ -210,8 +251,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
                     android:layout_marginHorizontal="25dp"
-                    android:text="清理"
                     android:gravity="center"
+                    android:text="清理"
                     android:textColor="@color/white"
                     android:textSize="18sp" />
             </LinearLayout>

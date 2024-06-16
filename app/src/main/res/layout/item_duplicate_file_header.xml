@@ -29,4 +29,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/title_count" />
 
+    <TextView
+        android:id="@+id/selected_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="15dp"
+        android:textColor="#E6000000"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@id/title_count"
+        app:layout_constraintEnd_toStartOf="@id/title_size"
+        app:layout_constraintTop_toTopOf="@id/title_count" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
